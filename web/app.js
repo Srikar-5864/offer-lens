@@ -185,8 +185,9 @@ async function runExtract() {
     $("status").replaceChildren(
       el("span", { class: `badge ${r.valid ? "ok" : "bad"}`, text: r.valid ? "VALID" : "INVALID" }),
       el("span", { class: "meta", text: `${r.latency_ms} ms` }),
-      el("span", { class: "meta", text: r.model === "student" ? "OfferLens 1.5B" : "Base 1.5B" }),
+      el("span", { class: "meta", text: r.label }),
       el("span", { class: "tag yellow", text: "constrained" }),
+      ...(r.fallback ? [el("span", { class: "tag line", text: r.provider === "openrouter" ? "fallback · hosted API" : "fallback" })] : []),
     );
     $("receipt").replaceChildren(receipt(r.extraction));
     lastJson = jsonTokens(r.extraction ?? { error: "schema validation failed" });
@@ -218,8 +219,9 @@ async function runCompare() {
   try {
     const r = await api("/api/compare", { text, reference_date: $("ref-date").value || null });
     const b = r.base.extraction, s = r.student.extraction;
-    $("compare-base").replaceChildren(receipt(b, { diffAgainst: s, keyPrefix: "b" }));
-    $("compare-student").replaceChildren(receipt(s, { keyPrefix: "s" }));
+    const who = (x) => el("p", { class: "meta", text: `Answered by ${x.label}${x.fallback ? " (fallback)" : ""}` });
+    $("compare-base").replaceChildren(who(r.base), receipt(b, { diffAgainst: s, keyPrefix: "b" }));
+    $("compare-student").replaceChildren(who(r.student), receipt(s, { keyPrefix: "s" }));
     let diffs = 0;
     const n = Math.max(b?.offers.length ?? 0, s?.offers.length ?? 0);
     for (let k = 0; k < n; k++) for (const [f] of FIELDS) if (JSON.stringify(b?.offers[k]?.[f]) !== JSON.stringify(s?.offers[k]?.[f])) diffs++;

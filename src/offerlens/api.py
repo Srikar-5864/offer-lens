@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import re
+import time
 import unicodedata
 from collections.abc import Awaitable, Callable
 from datetime import date
@@ -44,6 +45,8 @@ app = FastAPI(
     title="OfferLens", debug=False, docs_url="/docs" if dev else None, redoc_url=None,
     openapi_url="/openapi.json" if dev else None,
 )  # fmt: skip
+
+
 def client_ip(request: Request) -> str:
     # Behind Vercel's proxy request.client is the proxy; Vercel sets x-real-ip to the caller and
     # overwrites any client-supplied value, so it is only trusted when running there.
@@ -125,20 +128,51 @@ class ExtractIn(CompareIn):
     model: Literal["student", "base"] = "student"
 
 
-async def _extract(text: str, ref: date, role: Role) -> dict[str, Any]:
-    async with gpu:
-        try:
-            res = await sglang_client.aextract(http, role, text, ref, constrained=True)
-        except httpx.HTTPError as exc:
-            raise HTTPException(503, f"The {role} model server is not reachable.") from exc
+LABELS = {"student": "OfferLens 1.5B", "base": "Base 1.5B"}
+_down_until: dict[str, float] = {}  # role -> monotonic time; skip a failed server briefly (per instance)
+DOWN_FOR_S = 60.0
+
+
+def _answer(
+    res: sglang_client.Result, model: str, label: str, provider: str, fallback: bool
+) -> dict[str, Any]:
     return {
         # Re-validated with Pydantic; invalid output is never passed through.
         "extraction": res.extraction.model_dump(mode="json") if res.extraction else None,
         "latency_ms": round(res.latency_ms),
-        "model": role,
+        "model": model,
+        "label": label,
+        "provider": provider,
+        "fallback": fallback,
         "valid": res.valid,
         "prompt_version": prompt.PROMPT_VERSION,
     }
+
+
+async def _extract(text: str, ref: date, role: Role, *, allow_base: bool = True) -> dict[str, Any]:
+    """SGLang `role` -> SGLang base (if allowed) -> OpenRouter. Every answer says who produced it."""
+    chain: list[Role] = [role] + (["base"] if allow_base and role != "base" else [])
+    fast = settings.openrouter_api_key is not None  # with a fallback, fail over instead of retrying
+    async with gpu:
+        for r in chain:
+            if _down_until.get(r, 0.0) > time.monotonic():
+                continue
+            try:
+                res = await sglang_client.aextract(
+                    http, r, text, ref, constrained=True, retries=0 if fast else 2
+                )
+            except httpx.HTTPError:
+                _down_until[r] = time.monotonic() + DOWN_FOR_S
+                continue
+            return _answer(res, r, LABELS[r], "sglang", fallback=r != role)
+        try:
+            res = await sglang_client.aextract_openrouter(http, text, ref)
+        except httpx.HTTPError as exc:
+            raise HTTPException(
+                503, "No model server is reachable right now. Try again in a minute."
+            ) from exc
+    model = settings.openrouter_model
+    return _answer(res, model, f"Fallback: {model}", "openrouter", fallback=True)
 
 
 @app.post("/api/extract", dependencies=[Depends(require_key)])
@@ -152,7 +186,7 @@ async def extract(request: Request, body: ExtractIn) -> dict[str, Any]:
 async def compare(request: Request, body: CompareIn) -> dict[str, Any]:
     ref = body.reference_date or date.today()
     base, student = await asyncio.gather(
-        _extract(body.text, ref, "base"), _extract(body.text, ref, "student")
+        _extract(body.text, ref, "base"), _extract(body.text, ref, "student", allow_base=False)
     )
     return {"base": base, "student": student}
 
@@ -177,7 +211,8 @@ async def healthz() -> dict[str, bool]:
     student, base = await asyncio.gather(
         sglang_client.healthy(http, "student"), sglang_client.healthy(http, "base")
     )
-    return {"ok": True, "sglang_student": student, "sglang_base": base}
+    fallback = settings.openrouter_api_key is not None
+    return {"ok": True, "sglang_student": student, "sglang_base": base, "openrouter_fallback": fallback}
 
 
 app.mount("/", StaticFiles(directory=ROOT / "web", html=True), name="web")

@@ -4,8 +4,8 @@ Messy Indian deal text in, schema-valid JSON out, on a fine-tuned 1.5B open mode
 
 Built for Syntax Error 2026, Local LLM Track, Problem Statement #5 (Structured output and extraction).
 
-**Live demo:** https://offer-lens-fawn.vercel.app (web UI only. Extraction needs a model server; see
-[Deploy on Vercel](#8-deploy-the-web-app-on-vercel).)
+**Live demo:** https://offer-lens-fawn.vercel.app (extraction works once the hosted model or fallback is set up;
+see [step 9](#9-make-the-online-demo-extract-hosted-sglang--fallback).)
 
 ![OfferLens](media/icon-600x600.png)
 
@@ -178,6 +178,46 @@ vercel deploy --prod
 `.vercelignore` keeps the virtual environment, data, media and docs out of the upload. On Vercel, rate limiting
 uses the `x-real-ip` header that Vercel sets, so each visitor gets their own 30 requests per minute.
 
+### 9. Make the online demo extract (hosted SGLang + fallback)
+
+The live site calls SGLang on a [Modal](https://modal.com) serverless GPU. When that server can't answer
+(the free credits are used up, it is down, or it is still cold-starting), the API switches to a free
+[OpenRouter](https://openrouter.ai) model with the same prompt and JSON schema. The output is re-validated
+the same way, and the UI tags the answer as **fallback · hosted API** with the model's name.
+
+Order the API tries: requested SGLang model, then the base SGLang model (Extract only), then OpenRouter. A
+server that fails is skipped for 60 seconds, so visitors don't wait out a cold start.
+
+1. Modal (free tier: $30 of credits a month). Install and log in, then deploy:
+
+   ```bash
+   pip install modal
+   modal setup                                    # opens a browser to log in
+   modal secret create offerlens-sglang SGLANG_API_KEY=$(openssl rand -hex 32)
+   modal deploy deploy/modal_sglang.py            # prints the server URL
+   ```
+
+   In the Modal dashboard, set a **workspace budget of $30**. Modal bills past the free credits otherwise; with
+   the budget the GPU stops at $30 and the site moves to the fallback on its own.
+
+2. OpenRouter: create an API key at https://openrouter.ai/keys. Free models allow 50 requests a day
+   (1,000 a day after buying $10 of credits). The free list changes; pick one that supports structured outputs
+   at https://openrouter.ai/models?supported_parameters=structured_outputs and set `OPENROUTER_MODEL`.
+
+3. Vercel: add the variables (mark the keys as sensitive), then redeploy:
+
+   ```bash
+   vercel env add SGLANG_BASE_MODEL_URL production   # https://<modal-url>/v1
+   vercel env add SGLANG_API_KEY production          # same value as the Modal secret
+   vercel env add OPENROUTER_API_KEY production
+   vercel env add OPENROUTER_MODEL production        # optional, default nvidia/nemotron-3-super-120b-a12b:free
+   vercel deploy --prod
+   ```
+
+`/healthz` reports `sglang_base`, `sglang_student` and `openrouter_fallback`. The fine-tuned model isn't hosted
+yet; after training, deploy it with `OFFERLENS_MODEL`/`OFFERLENS_SERVED_NAME=student` and set
+`SGLANG_STUDENT_URL`.
+
 ### Other targets
 
 ```bash
@@ -236,7 +276,7 @@ Full list: `docs/SECURITY.md`.
   `docs/DATA.md`. See `docs/DECISIONS.md` for why.
 - The real DealFeed test set (30 hand-labelled offers) still needs to be built.
 - Unit tests and CI are not written yet.
-- The Vercel deployment serves the UI and API only. It has no model server, so extraction does not work there yet.
+- The online demo runs the **base** 1.5B with grammar constraints (or the OpenRouter fallback). The fine-tuned model is not hosted until training has run.
 
 The full list is in `docs/EVAL.md`, and every shortcut is logged in `docs/DECISIONS.md`.
 
