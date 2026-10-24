@@ -288,3 +288,4 @@ example inside DealFeed production) needs a license from Lexsi Labs. Check each 
 ## Devlopers
 
 1. M. Likhit Naidu
+2. Mustafiz Ahmed 
