@@ -225,3 +225,7 @@ The full list is in `docs/EVAL.md`, and every shortcut is logged in `docs/DECISI
 
 CuratorKIT and AlignTune are source-available for non-commercial use. Commercial use of this pipeline (for
 example inside DealFeed production) needs a license from Lexsi Labs. Check each kit's LICENSE.
+
+## Devlopers
+
+1.M.Likhit Naidu
