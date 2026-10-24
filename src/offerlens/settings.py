@@ -29,12 +29,26 @@ class Settings(BaseSettings):
     gpu_cost_inr_per_hour: float | None = None
     sglang_timeout_s: float = 10.0
     max_concurrency: int = 8
+    # Hosted SGLang (e.g. deploy/modal_sglang.py): full OpenAI base URL per role, ending in /v1.
+    # Unset -> the local server on sglang_host:<role port>.
+    sglang_student_url: str | None = None
+    sglang_base_model_url: str | None = None
+    # Fallback when no SGLang server answers (e.g. the GPU free tier is used up). Unset -> no fallback.
+    openrouter_api_key: SecretStr | None = None
+    openrouter_model: str = "nvidia/nemotron-3-super-120b-a12b:free"
+    openrouter_timeout_s: float = 30.0
 
     def port(self, role: Role) -> int:
         return {"teacher": self.teacher_port, "base": self.base_port, "student": self.student_port}[role]
 
+    def role_url(self, role: Role) -> str | None:
+        return {"student": self.sglang_student_url, "base": self.sglang_base_model_url}.get(role)
+
     def base_url(self, role: Role) -> str:
-        return f"http://{self.sglang_host}:{self.port(role)}/v1"
+        return (self.role_url(role) or f"http://{self.sglang_host}:{self.port(role)}/v1").rstrip("/")
+
+    def health_url(self, role: Role) -> str:
+        return self.base_url(role).removesuffix("/v1") + "/health"
 
 
 @lru_cache

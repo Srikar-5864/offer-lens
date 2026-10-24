@@ -118,10 +118,14 @@ async def achat(
 
 
 async def achat_usage(
-    client: httpx.AsyncClient, role: Role, body: dict[str, Any], timeout: float | None = None
+    client: httpx.AsyncClient,
+    role: Role,
+    body: dict[str, Any],
+    timeout: float | None = None,
+    retries: int = _RETRIES,
 ) -> tuple[str, dict[str, int]]:
     settings = get_settings()
-    for attempt in range(_RETRIES + 1):
+    for attempt in range(retries + 1):
         try:
             resp = await client.post(
                 f"{settings.base_url(role)}/chat/completions",
@@ -131,7 +135,7 @@ async def achat_usage(
             )
             return _content(resp)
         except (httpx.TransportError, httpx.HTTPStatusError):
-            if attempt == _RETRIES:
+            if attempt == retries:
                 raise
             await asyncio.sleep(0.5 * 2**attempt)
     raise AssertionError("unreachable")
@@ -145,10 +149,11 @@ async def aextract(
     *,
     constrained: bool = True,
     timeout: float | None = None,
+    retries: int = _RETRIES,
 ) -> Result:
     t0 = time.perf_counter()
     body = payload(role, prompt.messages(text, reference_date), constrained=constrained)
-    raw, usage = await achat_usage(client, role, body, timeout)
+    raw, usage = await achat_usage(client, role, body, timeout, retries)
     ms = (time.perf_counter() - t0) * 1000
     extraction = parse(raw)
     _log(role, text, ms, extraction is not None)
@@ -162,9 +167,40 @@ async def aextract(
 
 
 async def healthy(client: httpx.AsyncClient, role: Role) -> bool:
-    settings = get_settings()
     try:
-        resp = await client.get(f"http://{settings.sglang_host}:{settings.port(role)}/health", timeout=2.0)
+        resp = await client.get(get_settings().health_url(role), headers=_headers(), timeout=2.0)
     except httpx.HTTPError:
         return False
     return resp.status_code == 200
+
+
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+
+
+async def aextract_openrouter(client: httpx.AsyncClient, text: str, reference_date: date) -> Result:
+    """Fallback: same prompt and JSON schema, sent to an OpenRouter model. Output is re-validated like SGLang's."""
+    settings = get_settings()
+    key = settings.openrouter_api_key
+    if key is None:
+        raise httpx.ConnectError("OpenRouter fallback is not configured")
+    body = payload("base", prompt.messages(text, reference_date), constrained=True)
+    body["model"] = settings.openrouter_model
+    body["provider"] = {"require_parameters": True}  # only providers that honour response_format
+    t0 = time.perf_counter()
+    resp = await client.post(
+        OPENROUTER_URL,
+        json=body,
+        headers={"Authorization": f"Bearer {key.get_secret_value()}", "X-Title": "OfferLens"},
+        timeout=settings.openrouter_timeout_s,
+    )
+    raw, usage = _content(resp)
+    ms = (time.perf_counter() - t0) * 1000
+    extraction = parse(raw)
+    _log("base", text, ms, extraction is not None)
+    return Result(
+        raw=raw,
+        extraction=extraction,
+        latency_ms=ms,
+        prompt_tokens=usage.get("prompt_tokens", 0),
+        completion_tokens=usage.get("completion_tokens", 0),
+    )

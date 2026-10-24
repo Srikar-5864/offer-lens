@@ -145,6 +145,7 @@ mark.is-linked { background: var(--paper-2); }
 .badge.bad { background: var(--red); }
 .tag { border-radius: var(--radius-pill); padding: 2px var(--s3); font-weight: 500; }
 .tag.yellow { background: var(--yellow); color: #141414; }
+.tag.line { border: var(--rule); }
 .meta { color: var(--ink-2); }
 
 .toggle { display: inline-flex; border: var(--rule); border-radius: var(--radius-pill); margin-bottom: var(--s4); }
