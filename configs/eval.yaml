@@ -1,0 +1,20 @@
+conditions:
+  A: {role: base, constrained: false}
+  B: {role: base, constrained: true}
+  C: {role: student, constrained: true}
+  D: {role: teacher, constrained: true}
+test_sets:
+  synthetic: data/raw/test.jsonl
+  real: data/real/real_test.jsonl
+  injection: tests/fixtures/injection.jsonl
+concurrency: 16
+bench_requests: 64
+timeout_s: 60
+# Closed-API reference price, fetched at build time; see results.json meta.price_source.
+closed_api:
+  name: null
+  usd_per_1m_input: null
+  usd_per_1m_output: null
+  usd_inr: null
+  source_url: null
+  fetched: null

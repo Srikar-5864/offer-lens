@@ -1,0 +1,220 @@
+{
+  "$defs": {
+    "Offer": {
+      "additionalProperties": false,
+      "properties": {
+        "merchant": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Merchant"
+        },
+        "issuer": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Issuer"
+        },
+        "offer_type": {
+          "enum": [
+            "cashback",
+            "instant_discount",
+            "coupon",
+            "bogo",
+            "free_delivery",
+            "reward_points",
+            "other"
+          ],
+          "title": "Offer Type",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "maximum": 100000,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        },
+        "value_unit": {
+          "anyOf": [
+            {
+              "enum": [
+                "percent",
+                "flat_inr"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value Unit"
+        },
+        "max_cap_inr": {
+          "anyOf": [
+            {
+              "maximum": 10000000,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Cap Inr"
+        },
+        "min_order_inr": {
+          "anyOf": [
+            {
+              "maximum": 10000000,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min Order Inr"
+        },
+        "coupon_code": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Z0-9_-]{3,20}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coupon Code"
+        },
+        "valid_from": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid From"
+        },
+        "valid_till": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid Till"
+        },
+        "payment_modes": {
+          "items": {
+            "enum": [
+              "credit_card",
+              "debit_card",
+              "upi",
+              "wallet",
+              "netbanking",
+              "emi",
+              "cod",
+              "any"
+            ],
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Payment Modes",
+          "type": "array"
+        },
+        "exclusions": {
+          "items": {
+            "maxLength": 80,
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Exclusions",
+          "type": "array"
+        },
+        "per_user_limit": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Per User Limit"
+        }
+      },
+      "required": [
+        "merchant",
+        "issuer",
+        "offer_type",
+        "value",
+        "value_unit",
+        "max_cap_inr",
+        "min_order_inr",
+        "coupon_code",
+        "valid_from",
+        "valid_till",
+        "payment_modes",
+        "exclusions",
+        "per_user_limit"
+      ],
+      "title": "Offer",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "offers": {
+      "items": {
+        "$ref": "#/$defs/Offer"
+      },
+      "maxItems": 4,
+      "minItems": 0,
+      "title": "Offers",
+      "type": "array"
+    }
+  },
+  "required": [
+    "offers"
+  ],
+  "title": "Extraction",
+  "type": "object"
+}
