@@ -271,6 +271,8 @@ async function loadResults() {
   }
 }
 
+const TEST_IDS = ["sms", "hinglish", "bank_tnc", "no_offer", "injection"];
+
 // ---------- Router + boot ----------
 function route() {
   const name = (location.hash.match(/^#\/(\w+)/) || [, "extract"])[1];
@@ -298,9 +300,20 @@ async function boot() {
   route();
   try {
     const examples = await api("/api/examples");
-    $("examples").replaceChildren(...examples.map((ex) => el("button", { type: "button", role: "listitem", text: ex.label, onclick: () => {
+    const load = (ex) => {
       ta.value = ex.text; $("compare-text").value = ex.text; $("ref-date").value = ex.reference_date; ta.dispatchEvent(new Event("input")); ta.focus();
-    } })));
+    };
+    $("examples").replaceChildren(...examples.map((ex) => el("button", { type: "button", role: "listitem", text: ex.label, onclick: () => load(ex) })));
+    // "Load test" cycles through 5 cases, one per click: easy, Hinglish, legalese, no offer, injection.
+    const tests = TEST_IDS.map((id) => examples.find((ex) => ex.id === id)).filter(Boolean);
+    let next = 0;
+    const testBtn = $("test-btn");
+    const label = () => { testBtn.textContent = `Load test ${next + 1} of ${tests.length}: ${tests[next].label}`; };
+    if (tests.length) {
+      label();
+      testBtn.hidden = false;
+      testBtn.addEventListener("click", () => { load(tests[next]); next = (next + 1) % tests.length; label(); });
+    }
   } catch { /* examples are optional */ }
 }
 boot();
