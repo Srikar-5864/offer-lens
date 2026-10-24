@@ -1,0 +1,16 @@
+.venv
+.ruff_cache
+.mypy_cache
+.pytest_cache
+.claude
+.env
+.env.*
+models
+data/raw
+data/curated
+data/real
+reports/runs
+media
+docs
+tests
+scripts
