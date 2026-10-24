@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OfferLens</title>
+  <meta name="description" content="Messy Indian offer text in, schema-valid JSON out, on a fine-tuned 1.5B model.">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="masthead">
+    <a class="brand" href="#/extract" aria-label="OfferLens home">
+      <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="16" cy="20" r="12" class="mark-ring"/>
+        <path d="M28 8 a12 12 0 0 1 0 24 z" class="mark-half"/>
+      </svg>
+      <span>OfferLens</span>
+    </a>
+    <nav aria-label="Views">
+      <a class="pill" href="#/extract" data-route="extract">Extract</a>
+      <a class="pill" href="#/compare" data-route="compare">Compare</a>
+      <a class="pill" href="#/results" data-route="results">Results</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <!-- Extract -->
+    <section class="view grid" id="view-extract" aria-labelledby="h-extract">
+      <div class="col-input">
+        <h1 id="h-extract" class="display">Messy offer in.<br>Clean JSON out.</h1>
+        <label class="field-label" for="offer-text">Offer text</label>
+        <div class="well">
+          <textarea id="offer-text" rows="6" maxlength="2000" spellcheck="false"
+            placeholder="Paste a bank T&amp;C, coupon SMS or WhatsApp forward…"></textarea>
+        </div>
+        <div class="row between">
+          <label class="date-label" for="ref-date">Reference date
+            <input id="ref-date" type="date">
+          </label>
+          <span class="count" id="char-count" aria-live="polite">0 / 2,000</span>
+        </div>
+        <p class="error" id="extract-error" role="alert" hidden></p>
+        <div class="row">
+          <button class="btn-ink" id="extract-btn" type="button">Extract <span aria-hidden="true">→</span></button>
+          <span class="hint">⌘/Ctrl + Enter</span>
+        </div>
+        <p class="examples-label" id="examples-label">Try an example</p>
+        <div class="examples" id="examples" role="list" aria-labelledby="examples-label"></div>
+        <div class="source-block" id="source-block" hidden>
+          <p class="field-label">Source, with what was found</p>
+          <p class="source" id="source"></p>
+        </div>
+      </div>
+
+      <div class="col-result" aria-live="polite" aria-busy="false" id="result-col">
+        <div class="empty" id="extract-empty">
+          <p>Nothing extracted yet. Pick an example or paste an offer, then press Extract.</p>
+        </div>
+        <div class="loader" id="loader" hidden>
+          <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" class="loader-track"/><circle cx="24" cy="24" r="20" class="loader-fill"/></svg>
+          <span>Reading the offer…</span>
+        </div>
+        <div class="result" id="result" hidden>
+          <div class="status" id="status"></div>
+          <div class="toggle" role="radiogroup" aria-label="Result view">
+            <button type="button" role="radio" aria-checked="true" data-view="receipt" class="toggle-opt">Receipt</button>
+            <button type="button" role="radio" aria-checked="false" data-view="json" class="toggle-opt">JSON</button>
+          </div>
+          <div id="receipt" class="receipts"></div>
+          <div id="json-view" hidden>
+            <pre class="json" id="json-pre" tabindex="0" aria-label="Extracted JSON"></pre>
+            <button class="btn-line" id="copy-btn" type="button">Copy JSON</button>
+            <span class="hint" id="copy-msg" aria-live="polite"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Compare -->
+    <section class="view grid" id="view-compare" aria-labelledby="h-compare" hidden>
+      <div class="col-wide">
+        <h1 id="h-compare" class="display">Grammar alone isn't enough.</h1>
+        <p class="lede">Same text, same JSON-schema constraint. Left: the base 1.5B. Right: OfferLens, fine-tuned.</p>
+        <label class="field-label" for="compare-text">Offer text</label>
+        <div class="well"><textarea id="compare-text" rows="4" maxlength="2000" spellcheck="false"></textarea></div>
+        <p class="error" id="compare-error" role="alert" hidden></p>
+        <button class="btn-ink" id="compare-btn" type="button">Compare <span aria-hidden="true">→</span></button>
+        <p class="verdict" id="verdict" aria-live="polite"></p>
+        <div class="compare-cols" id="compare-cols" hidden>
+          <div><h2 class="col-title">Base 1.5B + grammar</h2><div id="compare-base"></div></div>
+          <div><h2 class="col-title">OfferLens 1.5B</h2><div id="compare-student"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section class="view grid" id="view-results" aria-labelledby="h-results" hidden>
+      <div class="col-wide">
+        <h1 id="h-results" class="display">Valid and accurate.</h1>
+        <p class="lede">Measured by <code>make eval</code> on held-out test sets. Every number here is read from <code>reports/results.json</code>.</p>
+        <div id="results-body" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>Syntax Error 2026 · Local LLM Track · PS #5</span>
+    <span>SGLang · CuratorKIT · AlignTune · AuditKIT</span>
+  </footer>
+</body>
+</html>

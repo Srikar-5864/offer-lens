@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./data/real/**)",
+      "Bash(git push --force*)",
+      "Bash(rm -rf /*)"
+    ],
+    "allow": [
+      "Bash(make *)",
+      "Bash(uv *)",
+      "Bash(pytest*)",
+      "Bash(ruff *)",
+      "Bash(nvidia-smi*)"
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+# Pinned model revisions (HF commit hashes). trust_remote_code is always false.
+teacher:
+  repo: mlx-community/Qwen2.5-7B-Instruct-4bit   # 4-bit MLX build: the 16 GB M4 can't hold bf16 7B
+  revision: c26a38f6a37d0a51b4e9a1eb3026530fa35d9fed
+  mem_fraction: 0.40
+base:
+  repo: Qwen/Qwen2.5-1.5B-Instruct
+  revision: 989aa7980e4cf806f80c7fef2b1adb7bc71aa306
+  mem_fraction: 0.30
+student:
+  path: models/offerlens-1.5b-merged
+  mem_fraction: 0.30

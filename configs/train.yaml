@@ -1,0 +1,17 @@
+base_model: Qwen/Qwen2.5-1.5B-Instruct
+base_revision: 989aa7980e4cf806f80c7fef2b1adb7bc71aa306
+backend: trl              # unsloth needs CUDA; this box is Apple M4 (see DECISIONS.md)
+dataset_dir: data/curated
+output_dir: models/offerlens-lora
+merged_dir: models/offerlens-1.5b-merged
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+epochs: 2
+learning_rate: 2.0e-4
+warmup_ratio: 0.05
+max_seq_length: 1024
+batch_size: 4
+grad_accum: 4
+seed: 42

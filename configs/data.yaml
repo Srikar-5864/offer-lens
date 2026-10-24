@@ -1,0 +1,15 @@
+seed_train: 42
+seed_test: 7
+n_train_specs: 2000
+n_test_specs: 200
+reference_date_range: ["2026-09-01", "2026-12-15"]
+multi_offer_rate: 0.10
+no_offer_rate: 0.05
+relative_date_rate: 0.35
+teacher_temperature: 0.9
+concurrency: 16
+max_problems: 0                # data/verify.py fact-presence gate (replaces round-trip, see DECISIONS)
+raw_dir: data/raw
+curated_dir: data/curated
+split: {train: 0.9, validation: 0.1}
+reward_threshold: 0.7
