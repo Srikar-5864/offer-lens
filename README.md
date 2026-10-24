@@ -191,7 +191,7 @@ server that fails is skipped for 60 seconds, so visitors don't wait out a cold s
 1. Modal (free tier: $30 of credits a month). Install and log in, then deploy:
 
    ```bash
-   pip install modal
+   uv tool install modal                          # or: pip3 install modal
    modal setup                                    # opens a browser to log in
    modal secret create offerlens-sglang SGLANG_API_KEY=$(openssl rand -hex 32)
    modal deploy deploy/modal_sglang.py            # prints the server URL
