@@ -6,6 +6,7 @@ import asyncio
 import hmac
 import json
 import logging
+import os
 import re
 import unicodedata
 from collections.abc import Awaitable, Callable
@@ -43,7 +44,15 @@ app = FastAPI(
     title="OfferLens", debug=False, docs_url="/docs" if dev else None, redoc_url=None,
     openapi_url="/openapi.json" if dev else None,
 )  # fmt: skip
-limiter = Limiter(key_func=get_remote_address)
+def client_ip(request: Request) -> str:
+    # Behind Vercel's proxy request.client is the proxy; Vercel sets x-real-ip to the caller and
+    # overwrites any client-supplied value, so it is only trusted when running there.
+    if os.environ.get("VERCEL") and (ip := request.headers.get("x-real-ip")):
+        return ip
+    return get_remote_address(request)
+
+
+limiter = Limiter(key_func=client_ip)
 app.state.limiter = limiter
 gpu = asyncio.Semaphore(settings.max_concurrency)
 http = httpx.AsyncClient()

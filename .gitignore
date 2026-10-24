@@ -16,3 +16,4 @@ wandb/
 *.safetensors
 *.bin
 *.gguf
+.vercel

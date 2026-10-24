@@ -4,6 +4,9 @@ Messy Indian deal text in, schema-valid JSON out, on a fine-tuned 1.5B open mode
 
 Built for Syntax Error 2026, Local LLM Track, Problem Statement #5 (Structured output and extraction).
 
+**Live demo:** https://offer-lens-fawn.vercel.app (web UI only. Extraction needs a model server; see
+[Deploy on Vercel](#8-deploy-the-web-app-on-vercel).)
+
 ![OfferLens](media/icon-600x600.png)
 
 ## What it does
@@ -160,6 +163,21 @@ make app                  # terminal 3: open http://127.0.0.1:8000
 The UI loads without any model server. Extract and Compare show a "model server is not reachable" message
 until the servers are up.
 
+### 8. Deploy the web app on Vercel
+
+Vercel hosts the FastAPI app and the UI. It runs `app.py` at the repo root, which loads `src/offerlens/api.py`.
+Model servers cannot run on Vercel, so Extract and Compare return "model server is not reachable" until
+the app can reach an SGLang server elsewhere.
+
+```bash
+vercel link --project offer-lens
+vercel env add ENV production         # enter: demo  (turns off /docs)
+vercel deploy --prod
+```
+
+`.vercelignore` keeps the virtual environment, data, media and docs out of the upload. On Vercel, rate limiting
+uses the `x-real-ip` header that Vercel sets, so each visitor gets their own 30 requests per minute.
+
 ### Other targets
 
 ```bash
@@ -218,6 +236,7 @@ Full list: `docs/SECURITY.md`.
   `docs/DATA.md`. See `docs/DECISIONS.md` for why.
 - The real DealFeed test set (30 hand-labelled offers) still needs to be built.
 - Unit tests and CI are not written yet.
+- The Vercel deployment serves the UI and API only. It has no model server, so extraction does not work there yet.
 
 The full list is in `docs/EVAL.md`, and every shortcut is logged in `docs/DECISIONS.md`.
 
