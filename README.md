@@ -289,4 +289,4 @@ example inside DealFeed production) needs a license from Lexsi Labs. Check each 
 
 1. M. Likhit Naidu
 2. Mustafiz Ahmed
-3. CH. Srikar
+3. Chitturi Srikar
